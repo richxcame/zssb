@@ -4,7 +4,7 @@ import { Col, Divider, Row } from 'antd';
 import type { FC } from 'react';
 import { Link } from 'react-router-dom';
 
-import logoURL from '@/assets/tff.svg';
+import logoURL from '@/assets/download.jpeg';
 
 type TProps = {
 	image: string;

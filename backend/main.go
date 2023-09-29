@@ -93,6 +93,17 @@ type News struct {
 	IsArticle   bool           `json:"is_article"`
 }
 
+type Partner struct {
+	ID        uint           `json:"id" gorm:"primaryKey"`
+	CreatedAt time.Time      `json:"-"`
+	UpdatedAt time.Time      `json:"-"`
+	DeletedAt gorm.DeletedAt `json:"-"`
+	Title     Lang           `json:"title" gorm:"embedded;embeddedPrefix:title_"`
+	Link      string         `json:"link"`
+	Image     string         `json:"image"`
+	IsActive  bool           `json:"is_active"`
+}
+
 type Login struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
@@ -113,6 +124,7 @@ func main() {
 	db.AutoMigrate(&OrderProduct{})
 	db.AutoMigrate(&Order{})
 	db.AutoMigrate(&News{})
+	db.AutoMigrate(&Partner{})
 
 	// Create admin
 	db.Create(&Admin{Username: "admin", Password: "more"})
@@ -549,6 +561,120 @@ func main() {
 		os.Remove(wd + olderURL)
 
 		c.JSON(http.StatusOK, news)
+	})
+
+	r.POST("/partners", func(c *gin.Context) {
+		var partner Partner
+
+		if err := c.BindJSON(&partner); err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+		if err := db.Omit("id").Create(&partner).Error; err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, partner)
+	})
+
+	r.GET("/partners", func(c *gin.Context) {
+		var partners []Partner
+
+		if err := db.Order("created_at desc").Where("is_active = ?", true).Find(&partners).Error; err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"partners": partners,
+		})
+	})
+
+	r.GET("/partners/:id", func(c *gin.Context) {
+		id := c.Params.ByName("id")
+		var partner Partner
+		if err := db.Where("id = ?", id).First(&partner).Error; err != nil {
+			c.JSON(http.StatusNotFound, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, partner)
+	})
+
+	r.PUT("/partners/:id", func(c *gin.Context) {
+		var partner Partner
+		id := c.Param("id")
+		if err := db.Where("id = ?", id).First(&partner).Error; err != nil {
+			c.JSON(http.StatusNotFound, err.Error())
+			return
+		}
+		if err := c.BindJSON(&partner); err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+		partner.ID = StrToUint(id)
+		if err := db.Save(&partner).Error; err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, partner)
+	})
+
+	r.DELETE("/partners/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		var partner Partner
+		if err := db.Where("id = ?", id).First(&partner).Error; err != nil {
+			c.JSON(http.StatusNotFound, err.Error())
+			return
+		}
+		if err := db.
+			Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}}}).
+			Where("id = ?", id).Delete(&partner).Error; err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, partner)
+	})
+
+	r.POST("/partners/:id/image", func(c *gin.Context) {
+		id := c.Param("id")
+		var partner Partner
+		imageURL, err := FileUpload(c, "image", "partners/")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
+		if err := db.Where("id = ?", id).First(&partner).Error; err != nil {
+			c.JSON(http.StatusNotFound, err.Error())
+			return
+		}
+		partner.Image = imageURL
+		if err := db.Save(&partner).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		c.JSON(http.StatusOK, partner)
+	})
+
+	r.DELETE("/partners/:id/image", func(c *gin.Context) {
+		id := c.Param("id")
+		var partner Partner
+		wd, _ := os.Getwd()
+
+		if err := db.Where("id = ?", id).First(&partner).Error; err != nil {
+			c.JSON(http.StatusNotFound, err.Error())
+			return
+		}
+		olderURL := partner.Image
+		partner.Image = ""
+
+		if err := db.Save(&partner).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		os.Remove(wd + olderURL)
+
+		c.JSON(http.StatusOK, partner)
 	})
 
 	r.Run() // listen and serve on 0.0.0.0:8080
