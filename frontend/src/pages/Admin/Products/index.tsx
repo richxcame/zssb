@@ -7,10 +7,10 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
-import { deleteCategory, getCategories } from '@/services/category';
-import { setCategories } from '@/store/category/categorySlice';
+import { deleteProduct, getProducts } from '@/services/product';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import type { TCategory } from '@/types/category';
+import { setProducts } from '@/store/product/productSlice';
+import type { TProduct } from '@/types/product';
 
 const Tours: FC = () => {
 	const { t } = useTranslation();
@@ -18,11 +18,11 @@ const Tours: FC = () => {
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const dispatch = useAppDispatch();
 
-	const categories = useAppSelector(state => state.category.categories);
+	const products = useAppSelector(state => state.product.products);
 
 	const handleKeyDown = (e: KeyboardEvent) => {
 		if (e.shiftKey === true && e.key === 'N') {
-			navigate('/admin/categories/new');
+			navigate('/admin/products/new');
 		}
 	};
 
@@ -33,8 +33,8 @@ const Tours: FC = () => {
 	useEffect(() => {
 		try {
 			const fetchData = async () => {
-				const toursRes = await getCategories();
-				dispatch(setCategories(toursRes.data.categories));
+				const { data } = await getProducts();
+				dispatch(setProducts(data.products));
 			};
 			fetchData();
 			setIsLoading(false);
@@ -48,13 +48,13 @@ const Tours: FC = () => {
 
 	const onDeleteTour = async (id: number) => {
 		try {
-			await deleteCategory(id);
+			await deleteProduct(id);
 			notification.success({
 				message: 200,
 				description: t('deletedSuccessfully')
 			});
-			const toursRes = await getCategories();
-			dispatch(setCategories(toursRes.data.categories));
+			const { data } = await getProducts();
+			dispatch(setProducts(data.products));
 		} catch (err) {
 			if (axios.isAxiosError(err) && err.response) {
 				notification.error({
@@ -69,7 +69,8 @@ const Tours: FC = () => {
 			}
 		}
 	};
-	const columns: ColumnsType<TCategory> = [
+
+	const columns: ColumnsType<TProduct> = [
 		{
 			title: 'ID',
 			dataIndex: 'id',
@@ -103,7 +104,7 @@ const Tours: FC = () => {
 			width: 140,
 			render: (_, record) => (
 				<div>
-					<Button type='text' href={`/admin/categories/${record.id}`}>
+					<Button type='text' href={`/admin/products/${record.id}`}>
 						<EditOutlined />
 					</Button>
 					<Button type='text' onClick={() => onDeleteTour(record.id)}>
@@ -133,10 +134,10 @@ const Tours: FC = () => {
 						title={() => (
 							<Row align='middle'>
 								<Col span={12}>
-									<Typography.Title level={4}> Bölümler </Typography.Title>
+									<Typography.Title level={4}> Önümler </Typography.Title>
 								</Col>
 								<Col offset={10} span={2} style={{ display: 'flex', justifyContent: 'end' }}>
-									<Button href='/admin/categories/new' type='primary'>
+									<Button href='/admin/products/new' type='primary'>
 										<PlusOutlined />
 									</Button>
 								</Col>
@@ -144,7 +145,7 @@ const Tours: FC = () => {
 						)}
 						key='id'
 						columns={columns}
-						dataSource={categories}
+						dataSource={products}
 						rowKey={tour => tour.id}
 					/>
 				)}

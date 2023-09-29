@@ -1,4 +1,5 @@
-import { Button, Col, Form, Input, notification, Row, Space } from 'antd';
+import { Button, Col, Form, Input, InputNumber, notification, Row, Select, Space } from 'antd';
+import TextArea from 'antd/es/input/TextArea';
 import axios from 'axios';
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
@@ -6,12 +7,15 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import ItemSkeleton from '@/components/ItemSkeleton';
-import { getCategory, postCategory, putCategory } from '@/services/category';
-import { setCategory } from '@/store/category/categorySlice';
+import { getCategories } from '@/services/category';
+import { getProduct, postProduct, putProduct } from '@/services/product';
+import { setCategories } from '@/store/category/categorySlice';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import type { TCategory } from '@/types/category';
+import { setProduct } from '@/store/product/productSlice';
+import type { TProduct } from '@/types/product';
 
 const { Item } = Form;
+const { Option } = Select;
 
 const Category: FC = () => {
 	const { t } = useTranslation();
@@ -22,10 +26,28 @@ const Category: FC = () => {
 	const category = useAppSelector(state => state.category.categories);
 	const [form] = Form.useForm();
 
-	const onFinish = async (values: TCategory) => {
+	const categories = useAppSelector(state => state.category.categories);
+
+	useEffect(() => {
+		try {
+			const fetchData = async () => {
+				const toursRes = await getCategories();
+				dispatch(setCategories(toursRes.data.categories));
+			};
+			fetchData();
+			setIsLoading(false);
+		} catch (err) {
+			notification.error({
+				message: 500,
+				description: t('couldNotFetch')
+			});
+		}
+	}, []);
+
+	const onFinish = async (values: TProduct) => {
 		try {
 			if (Number(id)) {
-				await putCategory(Number(id), {
+				await putProduct(Number(id), {
 					...values
 				});
 				notification.success({
@@ -33,12 +55,12 @@ const Category: FC = () => {
 					description: t('updatedSuccessfully')
 				});
 			} else {
-				const { data } = await postCategory(values);
+				await postProduct(values);
 				notification.success({
 					message: 200,
 					description: t('addedSuccessfully')
 				});
-				navigate(`/admin/categories/${data.id}`, { replace: true });
+				// navigate(`/admin/product/${data.id}`, { replace: true });
 			}
 		} catch (err) {
 			notification.error({
@@ -58,10 +80,9 @@ const Category: FC = () => {
 		const fetchData = async () => {
 			try {
 				if (Number(id)) {
-					const categoryRes = await getCategory(Number(id));
-					dispatch(setCategory(categoryRes.data));
+					const { data } = await getProduct(Number(id));
+					dispatch(setProduct(data));
 				}
-
 				setIsLoading(false);
 			} catch (err) {
 				if (axios.isAxiosError(err) && err.response) {
@@ -87,8 +108,6 @@ const Category: FC = () => {
 	useEffect(() => {
 		form.resetFields();
 	}, [category]);
-
-	form.setFieldsValue({ ...category });
 
 	return (
 		<div className='container'>
@@ -134,19 +153,59 @@ const Category: FC = () => {
 									<Input />
 								</Item>
 							</Col>
-							{/*
-							<Col span={4}>
-								<Item
-									labelAlign='right'
-									label={t('showMatches')}
-									name='i'
-									valuePropName='checked'
-								>
-									<Checkbox style={{ display: 'flex', justifyContent: 'center' }} />
-								</Item>
-							</Col> */}
 						</Row>
 
+						<Row justify='space-around'>
+							<Col span={5}>
+								<Item
+									label={t('price')}
+									name='price'
+									rules={[{ required: true, message: t('enterValue') }]}
+								>
+									<InputNumber style={{ width: '100%' }} />
+								</Item>
+							</Col>
+							<Col span={5}>
+								<Item name='categories_id' label='Bölümi'>
+									<Select placeholder='Bolum sayla' style={{ width: '100%' }}>
+										{categories.map(item => (
+											<Option key={item.id} value={item.id}>
+												{item.title.tk}
+											</Option>
+										))}
+									</Select>
+								</Item>
+							</Col>
+							<Col span={5}>
+								<Item
+									name={['description', 'ru']}
+									label={`${t('description')} (TK)`}
+									rules={[{ required: true, message: t('enterValue') }]}
+								>
+									<TextArea rows={4} />
+								</Item>
+							</Col>
+						</Row>
+						<Row justify='space-around'>
+							<Col span={5}>
+								<Item
+									name={['description', 'en']}
+									label={`${t('description')} (EN)`}
+									rules={[{ required: true, message: t('enterValue') }]}
+								>
+									<TextArea rows={4} />
+								</Item>
+							</Col>
+							<Col span={5}>
+								<Item
+									name={['description', 'tk']}
+									label={`${t('description')} (RU)`}
+									rules={[{ required: true, message: t('enterValue') }]}
+								>
+									<TextArea rows={4} />
+								</Item>
+							</Col>
+						</Row>
 						{/* Actions */}
 						<Row justify='end' style={{ marginTop: '20px' }}>
 							<Space>

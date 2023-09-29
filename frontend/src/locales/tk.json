@@ -193,11 +193,16 @@
 	"orderOfTours": "Tapgyrlaryň yzygiderligi",
 	"dragForOrderChange": "Yzygiderligi üýtgetmek üçin tutyp süýşiriň",
 	"readMore": "Dowamy",
-	"category": "Category",
+	"category": "Bölüm",
 	"category_other": "Categories",
-	"product": "Product",
+	"product": "Önümler",
 	"product_other": "Products",
 	"service": "Service",
 	"service_other": "Services",
+<<<<<<< HEAD
 	"famous_products" : "The most famous products"
+=======
+	"price": "Bahasy",
+	"description": "Düşündirilişi"
+>>>>>>> 5f30a24 (added two menu in admin)
 }

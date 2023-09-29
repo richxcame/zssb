@@ -2,13 +2,13 @@ import '@/styles/AdminLayout.sass';
 
 import {
 	ApartmentOutlined,
+	AppleOutlined,
 	CameraOutlined,
 	InfoCircleOutlined,
 	MenuFoldOutlined,
 	MenuUnfoldOutlined,
 	NotificationOutlined,
-	UserOutlined,
-	UserSwitchOutlined,
+	UserOutlined
 } from '@ant-design/icons';
 import { Avatar, Button, Col, Dropdown, Layout, Menu, Row, Select, Space, theme } from 'antd';
 import type { ItemType } from 'antd/lib/menu/hooks/useItems';
@@ -16,9 +16,10 @@ import type { FC } from 'react';
 import { useState } from 'react';
 import { useCookies } from 'react-cookie';
 import { useTranslation } from 'react-i18next';
-import { Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
-import logoURL from '@/assets/tff.svg';
+import logo from '@/assets/logo.svg';
+// import logoURL from '@/assets/tff.svg';
 
 const { Header, Content, Sider } = Layout;
 const { Option } = Select;
@@ -35,65 +36,38 @@ const AdminLayout: FC = () => {
 
 	const menus: ItemType[] = [
 		{
-			key: '',
-			label: t('match'),
-			icon: <ApartmentOutlined />,
-			children: [
-				{
-					key: '/admin/competitions',
-					label: t('competition', { count: 2 }),
-				},
-				{ key: '/admin/teams', label: t('team', { count: 2 }) },
-				{ key: '/admin/tours', label: t('tour', { count: 2 }) },
-				{ key: '/admin/matches', label: t('match', { count: 2 }) },
-			],
+			key: '/admin/categories',
+			label: <Link to='/admin/category'> Bölümler </Link>,
+			icon: <ApartmentOutlined />
+		},
+		{
+			key: '/admin/products',
+			label: <Link to='/admin/products'> {t('product')} </Link>,
+			icon: <AppleOutlined />
 		},
 		{
 			key: 'news',
-			label: t('news', { count: 2 }),
-			icon: <NotificationOutlined />,
-			children: [
-				{
-					key: `/admin/news?is_article=true`,
-					label: t('article', { count: 2 }),
-				},
-				{ key: '/admin/news', label: t('news', { count: 2 }) },
-			],
+			label: t('news'),
+			icon: <NotificationOutlined />
 		},
 		{
 			key: 'media',
 			label: t('media'),
-			icon: <CameraOutlined />,
-			children: [
-				{ key: '/admin/sliders', label: t('slider', { count: 2 }) },
-				{ key: '/admin/albums', label: t('album', { count: 2 }) },
-				{ key: '/admin/videos', label: t('video', { count: 2 }) },
-			],
-		},
-		{
-			key: 'nationalTeam',
-			label: t('nationalTeam', { count: 2 }),
-			icon: <UserSwitchOutlined />,
-			children: [
-				{
-					key: '/admin/national-teams',
-					label: t('nationalTeam', { count: 2 }),
-				},
-			],
+			icon: <CameraOutlined />
 		},
 		{
 			key: 'aboutUs',
 			label: t('aboutUs'),
-			icon: <InfoCircleOutlined />,
-			children: [
-				{
-					key: '/admin/stadiums',
-					label: t('stadium', { count: 2 }),
-				},
-				{ key: '/admin/referees', label: t('referee', { count: 2 }) },
-				{ key: '/admin/employees', label: t('employee', { count: 2 }) },
-			],
-		},
+			icon: <InfoCircleOutlined />
+			// children: [
+			// 	{
+			// 		key: '/admin/stadiums',
+			// 		label: t('stadium', { count: 2 })
+			// 	},
+			// 	{ key: '/admin/referees', label: t('referee', { count: 2 }) },
+			// 	{ key: '/admin/employees', label: t('employee', { count: 2 }) }
+			// ]
+		}
 	];
 
 	const onSelectLang = (value: string) => {
@@ -104,7 +78,7 @@ const AdminLayout: FC = () => {
 	const contentStyle = {
 		backgroundColor: token.colorBgElevated,
 		borderRadius: token.borderRadiusLG,
-		boxShadow: token.boxShadowSecondary,
+		boxShadow: token.boxShadowSecondary
 	};
 
 	const logout = () => {
@@ -120,12 +94,12 @@ const AdminLayout: FC = () => {
 			<Sider trigger={null} collapsible collapsed={collapsed} width={200} className='r-sider'>
 				<div className='r-logo-area'>
 					<a href='/'>
-						<img src={logoURL} alt='TFF' title='TFF' className='r-logo' />
+						<img src={logo} alt='' title='' className='r-logo' style={{ height: '200px' }} />{' '}
 					</a>
 				</div>
 				<Menu
 					selectedKeys={[
-						location.pathname + (searchParams.get('is_article') ? '?is_article=true' : ''),
+						location.pathname + (searchParams.get('is_article') ? '?is_article=true' : '')
 					]}
 					onSelect={({ key }) => {
 						navigate(key);
