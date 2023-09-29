@@ -4,6 +4,7 @@ import './App.css';
 import type { FC } from 'react';
 import { Route, Routes } from 'react-router-dom';
 
+import SingleItem from '@/components/SingleItem';
 import AdminLayout from '@/layouts/AdminLayout';
 import MainLayout from '@/layouts/MainLayout';
 import AdminCategories from '@/pages/Admin/Categories';
@@ -18,6 +19,9 @@ import NewsList from '@/pages/News';
 import News from '@/pages/News/Item';
 import { useAppSelector } from '@/store/hooks';
 
+import AboutUs from './pages/AboutUs';
+import ContactUs from './pages/ContactUs/ContactUs';
+
 const App: FC = () => {
 	const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
 	return (
@@ -27,6 +31,9 @@ const App: FC = () => {
 				<Route path='' element={<Dashboard />} />
 				<Route path='news/:id' element={<News />} />
 				<Route path='news' element={<NewsList />} />
+				<Route path='/about-us' element={<AboutUs />} />
+				<Route path='/contact-us' element={<ContactUs />} />
+				<Route path='/products' element={<SingleItem />} />
 			</Route>
 			<Route
 				path='/admin'

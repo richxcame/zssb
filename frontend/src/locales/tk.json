@@ -1,5 +1,6 @@
 {
 	"name": "Ady",
+	"about" : "Biz barada",
 	"fullName": "Doly ady",
 	"shortName": "Gysga ady",
 	"nameIsRequired": "At hökmany",
@@ -172,7 +173,7 @@
 	"nationalTeam_other": "Milli ýygyndylar",
 	"allRightsReserved": "Ähli hukuklary goragly.",
 	"tff": "Türkmenistanyň Futbol Federasiýasy",
-	"aboutUsPageText": "Türkmenistanyň Futbol Federasiýasy (gysgaça TFF) — türkmen milli futbol federasiýasy, FIFA -nyň we Aziýa futbol konfederasiýanyň agzasy. Esasy maksady - Türkmenistanda futbol oýnunyň meşhurlygyny ösdürmek.",
+	"aboutUsPageText": "Sagdyn iýmitlenmek berk çäklendirmeler, hakykatdanam inçe bolmak ýa-da halaýan iýmitleriňizden mahrum etmek däl. Has dogrusy, özüňi gowy duýmak, has köp energiýa eýe bolmak, saglygyňy gowulaşdyrmak we keýpiňi ýokarlandyrmak hakda. Sagdyn iýmitlenmek gaty çylşyrymly bolmaly däl. Therehli gapma-garşylykly iýmitleniş we iýmitleniş maslahatlaryndan özüňizi aşa duýsaňyz, ýeke dälsiňiz.",
 	"ourPartner": "Biziň hyzmatdaşymyz",
 	"ourPartner_other": "Biziň hyzmatdaşlarymyz",
 	"showAll": "Ählisi",
@@ -197,5 +198,6 @@
 	"product": "Product",
 	"product_other": "Products",
 	"service": "Service",
-	"service_other": "Services"
+	"service_other": "Services",
+	"famous_products" : "The most famous products"
 }
