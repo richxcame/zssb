@@ -1,6 +1,6 @@
 {
 	"name": "Ady",
-	"about" : "Biz barada",
+	"about": "Biz barada",
 	"fullName": "Doly ady",
 	"shortName": "Gysga ady",
 	"nameIsRequired": "At hökmany",
@@ -199,10 +199,7 @@
 	"product_other": "Products",
 	"service": "Service",
 	"service_other": "Services",
-<<<<<<< HEAD
-	"famous_products" : "The most famous products"
-=======
+	"famous_products": "The most famous products",
 	"price": "Bahasy",
 	"description": "Düşündirilişi"
->>>>>>> 5f30a24 (added two menu in admin)
 }
