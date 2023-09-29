@@ -2,12 +2,15 @@ package main
 
 import (
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -41,7 +44,6 @@ type Category struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-"`
 	Title     Lang           `json:"title" gorm:"embedded;embeddedPrefix:title_"`
-	IsActive  bool           `json:"is_active"`
 }
 
 type Product struct {
@@ -55,7 +57,40 @@ type Product struct {
 	CategoryID  uint           `json:"category_id"`
 	Category    *Category      `json:"category"`
 	Image       string         `json:"image"`
-	IsActive    bool           `json:"is_active"`
+}
+
+type Order struct {
+	ID        uint            `json:"id" gorm:"primaryKey"`
+	CreatedAt time.Time       `json:"created_at"`
+	UpdatedAt time.Time       `json:"updated_at"`
+	DeletedAt gorm.DeletedAt  `json:"-"`
+	Phone     string          `json:"phone"`
+	Address   string          `json:"address"`
+	Comment   string          `json:"comment"`
+	Products  []*OrderProduct `json:"products"`
+}
+
+type OrderProduct struct {
+	ID        uint           `json:"id" gorm:"primaryKey"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-"`
+	ProductID uint           `json:"product_id"`
+	Product   Product        `json:"product" gorm:"foreignKey:ProductID;references:ID"`
+	OrderID   uint           `json:"order_id"`
+	Quantity  uint           `json:"quantity"`
+}
+
+type News struct {
+	ID          uint           `json:"id" gorm:"primaryKey"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `json:"-"`
+	PublishedAt time.Time      `json:"published_at"`
+	Title       Lang           `json:"title" gorm:"embedded;embeddedPrefix:title_"`
+	Description Lang           `json:"description" gorm:"embedded;embeddedPrefix:description_"`
+	Image       string         `json:"image"`
+	IsArticle   bool           `json:"is_article"`
 }
 
 type Login struct {
@@ -75,6 +110,9 @@ func main() {
 	db.AutoMigrate(&Product{})
 	db.AutoMigrate(&Category{})
 	db.AutoMigrate(&Admin{})
+	db.AutoMigrate(&OrderProduct{})
+	db.AutoMigrate(&Order{})
+	db.AutoMigrate(&News{})
 
 	// Create admin
 	db.Create(&Admin{Username: "admin", Password: "more"})
@@ -106,9 +144,7 @@ func main() {
 	r.GET("/products", func(c *gin.Context) {
 		var products []Product
 
-		mainQuery := db.
-			Model(&Product{}).
-			Where("is_active = ?", true)
+		mainQuery := db.Model(&Product{})
 
 		categoryIDs := c.QueryArray("category_ids")
 
@@ -204,6 +240,16 @@ func main() {
 		})
 	})
 
+	r.GET("/categories/:id", func(c *gin.Context) {
+		id := c.Params.ByName("id")
+		var category Category
+		if err := db.Where("id = ?", id).First(&category).Error; err != nil {
+			c.JSON(http.StatusNotFound, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, category)
+	})
+
 	r.PUT("/categories/:id", Auth(), func(c *gin.Context) {
 		var category Category
 		id := c.Param("id")
@@ -291,6 +337,220 @@ func main() {
 		})
 	})
 
+	r.GET("/products/:id", func(c *gin.Context) {
+		id := c.Params.ByName("id")
+		var product Product
+		if err := db.Where("id = ?", id).First(&product).Error; err != nil {
+			c.JSON(http.StatusNotFound, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, product)
+	})
+
+	r.POST("products/:id/image", Auth(), func(c *gin.Context) {
+		id := c.Param("id")
+		var product Product
+		imageURL, err := FileUpload(c, "image", "/products")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
+		if err := db.Where("id = ?", id).First(&product).Error; err != nil {
+			c.JSON(http.StatusNotFound, err.Error())
+			return
+		}
+		product.Image = imageURL
+		if err := db.Save(&product).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		c.JSON(http.StatusOK, product)
+	})
+
+	r.DELETE("products/:id/image", Auth(), func(c *gin.Context) {
+		id := c.Param("id")
+		var product Product
+		wd, _ := os.Getwd()
+
+		if err := db.Where("id = ?", id).First(&product).Error; err != nil {
+			c.JSON(http.StatusNotFound, err.Error())
+			return
+		}
+		olderURL := product.Image
+		product.Image = ""
+
+		if err := db.Save(&product).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		os.Remove(wd + olderURL)
+
+		c.JSON(http.StatusOK, product)
+	})
+
+	r.POST("/orders", func(c *gin.Context) {
+		var order Order
+
+		if err := c.BindJSON(&order); err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+		if err := db.Omit("id").Create(&order).Error; err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, order)
+	})
+
+	r.GET("/orders", func(c *gin.Context) {
+		var orders []Order
+
+		mainQuery := db.Model(&Order{})
+
+		var total int64
+
+		if err := mainQuery.
+			Count(&total).
+			Scopes(Paginate(c.Request)).
+			Preload("OrderProducts.Products").
+			Find(&orders).Error; err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"orders": orders,
+			"total":  total,
+		})
+	})
+
+	r.POST("/news", func(c *gin.Context) {
+		var news News
+
+		if err := c.BindJSON(&news); err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+		if err := db.Omit("id").Create(&news).Error; err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, news)
+	})
+
+	r.GET("/news", func(c *gin.Context) {
+		var news []News
+
+		mainQuery := db.
+			Model(&News{}).
+			Order("created_at desc")
+
+		var total int64
+
+		if err := mainQuery.
+			Count(&total).
+			Scopes(Paginate(c.Request)).
+			Find(&news).Error; err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"news":  news,
+			"total": total,
+		})
+	})
+
+	r.GET("/news/:id", func(c *gin.Context) {
+		id := c.Params.ByName("id")
+		var news News
+		if err := db.Where("id = ?", id).First(&news).Error; err != nil {
+			c.JSON(http.StatusNotFound, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, news)
+	})
+
+	r.PUT("/news/:id", func(c *gin.Context) {
+		var news News
+		id := c.Param("id")
+		if err := db.Where("id = ?", id).First(&news).Error; err != nil {
+			c.JSON(http.StatusNotFound, err.Error())
+			return
+		}
+		if err := c.BindJSON(&news); err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+		news.ID = StrToUint(id)
+		if err := db.Save(&news).Error; err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, news)
+	})
+
+	r.DELETE("/news/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		var news News
+		if err := db.Where("id = ?", id).First(&news).Error; err != nil {
+			c.JSON(http.StatusNotFound, err.Error())
+			return
+		}
+		if err := db.
+			Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}}}).
+			Where("id = ?", id).Delete(&news).Error; err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, news)
+	})
+
+	r.POST("/news/:id/image", func(c *gin.Context) {
+		id := c.Param("id")
+		var news News
+		imageURL, err := FileUpload(c, "image", "news/")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
+		if err := db.Where("id = ?", id).First(&news).Error; err != nil {
+			c.JSON(http.StatusNotFound, err.Error())
+			return
+		}
+		news.Image = imageURL
+		if err := db.Save(&news).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		c.JSON(http.StatusOK, news)
+	})
+
+	r.DELETE("/news/:id/image", func(c *gin.Context) {
+		id := c.Param("id")
+		var news News
+		wd, _ := os.Getwd()
+
+		if err := db.Where("id = ?", id).First(&news).Error; err != nil {
+			c.JSON(http.StatusNotFound, err.Error())
+			return
+		}
+		olderURL := news.Image
+		news.Image = ""
+
+		if err := db.Save(&news).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		os.Remove(wd + olderURL)
+
+		c.JSON(http.StatusOK, news)
+	})
+
 	r.Run() // listen and serve on 0.0.0.0:8080
 
 }
@@ -375,4 +635,27 @@ func Paginate(r *http.Request) func(db *gorm.DB) *gorm.DB {
 func StrToUint(num string) uint {
 	newInt, _ := strconv.ParseUint(num, 10, 32)
 	return uint(newInt)
+}
+
+func FileUpload(c *gin.Context, name string, dest string) (url string, err error) {
+	file, err := c.FormFile(name)
+
+	// The file cannot be received.
+	if err != nil {
+		return "", err
+	}
+
+	// Retrieve file information
+	extension := filepath.Ext(file.Filename)
+	newFileName := uuid.New().String() + extension
+
+	// Current working directory
+	wd, _ := os.Getwd()
+	// The file is received, so let's save it
+	if err := c.SaveUploadedFile(file, wd+"/uploads/"+dest+newFileName); err != nil {
+		return "", err
+	}
+	url = "/uploads/" + dest + newFileName
+
+	return url, nil
 }

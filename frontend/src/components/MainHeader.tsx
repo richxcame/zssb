@@ -10,7 +10,7 @@ import logoURL from '@/assets/tff.svg';
 import LanguageSelect from '@/components/LanguageSelect';
 import { getCategories } from '@/services/category';
 import { setCategories } from '@/store/category/categorySlice';
-import { useAppDispatch } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -20,6 +20,7 @@ const MainHeader: FC = () => {
 	const resolved = useResolvedPath(location);
 	const match = useMatch({ path: resolved.pathname, end: true });
 	const dispatch = useAppDispatch();
+	const categories = useAppSelector(state => state.category.categories);
 
 	const [open, setOpen] = useState<boolean>(false);
 
@@ -73,15 +74,9 @@ const MainHeader: FC = () => {
 		} as MenuItem);
 
 	const items: MenuItem[] = [
-		createMenuItem(t('aboutUs'), 'aboutUs', null, [
-			createMenuItem(t('mainAim'), '/about-us'),
-			createMenuItem(t('stadium', { count: 2 }), '/stadiums'),
-			createMenuItem(t('referee', { count: 2 }), '/referees'),
-			createMenuItem(t('employee', { count: 2 }), '/employees'),
-		]),
+		createMenuItem(t('aboutUs'), 'aboutUs', null, [createMenuItem(t('mainAim'), '/about-us')]),
 		createMenuItem(t('news', { count: 2 }), 'news', null, [
 			createMenuItem(t('news', { count: 2 }), '/news'),
-			createMenuItem(t('article', { count: 2 }), '/news?is_article=true'),
 		]),
 		createMenuItem(t('category', { count: 2 }), '/categories', null),
 		createMenuItem(t('service', { count: 2 }), '/services', null),
@@ -92,7 +87,10 @@ const MainHeader: FC = () => {
 		createMenuItem(t('contactUs', { count: 2 }), '/contact-us', null),
 	];
 
-	const categoryItems: MenuProps['items'] = [];
+	const categoryItems: MenuProps['items'] = categories.map(category => ({
+		key: `category ${category.id}`,
+		label: category.title.tk,
+	}));
 
 	const mediaItems: MenuProps['items'] = [
 		{

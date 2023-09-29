@@ -1,0 +1,26 @@
+@use '../../styles/_variables' as *
+
+.r-news-title
+	color: $primary
+
+
+@media screen and (max-width: $screen-md)
+	.r-news-title
+		font-size: 16px
+
+	.r-news-description
+		font-size: 12px
+
+
+@media screen and (min-width: $screen-md)
+	.r-news-title
+		margin: 16px 0
+		font-size: 36px
+		line-height: 36px
+
+	.r-news-description
+		font-size: 18px
+		line-height: 18px
+
+	.r-part
+		max-width: 70%
