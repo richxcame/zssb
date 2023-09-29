@@ -12,6 +12,9 @@ import Login from '@/pages/Auth/Login';
 import Protected from '@/pages/Auth/Protected';
 import Dashboard from '@/pages/Dashboard';
 import { useAppSelector } from '@/store/hooks';
+import AboutUs from './pages/AboutUs';
+import SingleItem from '@/components/SingleItem';
+import ContactUs from './pages/ContactUs/ContactUs';
 
 const App: FC = () => {
 	const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
@@ -20,6 +23,9 @@ const App: FC = () => {
 			<Route path='/login' element={<Login />} />
 			<Route path='/' element={<MainLayout />}>
 				<Route path='' element={<Dashboard />} />
+				<Route path='/about-us' element={<AboutUs />} />
+				<Route path='/contact-us' element={<ContactUs />} />
+				<Route path='/products' element={<SingleItem />} />
 			</Route>
 			<Route
 				path='/admin'

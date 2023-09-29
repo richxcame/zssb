@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useMatch, useResolvedPath } from 'react-router-dom';
 
-import logoURL from '@/assets/tff.svg';
+import logoURL from '@/assets/cotton-natural-logo-vector.svg';
 import LanguageSelect from '@/components/LanguageSelect';
 import { getCategories } from '@/services/category';
 import { setCategories } from '@/store/category/categorySlice';
@@ -15,6 +15,9 @@ import { useAppDispatch } from '@/store/hooks';
 type MenuItem = Required<MenuProps>['items'][number];
 
 const MainHeader: FC = () => {
+
+	
+
 	const { t } = useTranslation();
 	const location = useLocation();
 	const resolved = useResolvedPath(location);
@@ -167,14 +170,6 @@ const MainHeader: FC = () => {
 						</a>
 					</Col>
 
-					<Col span={0} lg={3} style={{ textAlign: 'center' }}>
-						<Link
-							to='/services'
-							style={{ color: match?.pathname === '/national-teams' ? '#429941' : 'black' }}
-						>
-							{t('service', { count: 2 })}
-						</Link>
-					</Col>
 
 					<Col span={0} lg={3} style={{ textAlign: 'center' }}>
 						<Dropdown menu={{ items: mediaItems }} placement='bottom'>
@@ -182,6 +177,15 @@ const MainHeader: FC = () => {
 								{t('media')}
 							</Button>
 						</Dropdown>
+					</Col>
+
+					<Col span={0} lg={3} style={{ textAlign: 'center' }}>
+						<Link
+							to='/about-us'
+							style={{ color: match?.pathname === '/about-us' ? '#429941' : 'black' }}
+						>
+							{t('about', { count: 2 })}
+						</Link>
 					</Col>
 
 					<Col span={0} lg={3} style={{ textAlign: 'center' }}>
